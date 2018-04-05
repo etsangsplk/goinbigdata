@@ -1,10 +1,10 @@
 package main
 
 import (
-	"time"
+	"fmt"
 	"html/template"
 	"os"
-	"fmt"
+	"time"
 )
 
 type Account struct {
@@ -24,15 +24,33 @@ type Statement struct {
 	Account   Account
 	Purchases []Purchase
 }
+type PurchaseItem struct {
+	Name        string
+	Description string
+}
+
+type PurchaseItems struct {
+	Items []PurchaseItem
+}
 
 func main() {
 	fmap := template.FuncMap{
 		"formatAsDollars": formatAsDollars,
-		"formatAsDate": formatAsDate,
-		"urgentNote": urgentNote,
+		"formatAsDate":    formatAsDate,
+		"urgentNote":      urgentNote,
 	}
 	t := template.Must(template.New("email.tmpl").Funcs(fmap).ParseFiles("email.tmpl"))
 	err := t.Execute(os.Stdout, createMockStatement())
+	if err != nil {
+		panic(err)
+	}
+
+	gmap := template.FuncMap{
+		"Name":        getName,
+		"Description": getDescription,
+	}
+	m := template.Must(template.New("map.tmpl").Funcs(gmap).ParseFiles("map.tmpl"))
+	err = m.Execute(os.Stdout, createPurchaseItems())
 	if err != nil {
 		panic(err)
 	}
@@ -53,23 +71,46 @@ func urgentNote(acc Account) string {
 	return fmt.Sprintf("You have earned 100 VIP points that can be used for purchases")
 }
 
+func createPurchaseItems() PurchaseItems {
+	return PurchaseItems{
+		Items: []PurchaseItem{
+			{
+				Name:        "item1",
+				Description: "description1",
+			},
+			{
+				Name:        "item2",
+				Description: "description2",
+			},
+		},
+	}
+}
+
+func getName(p PurchaseItem) string {
+	return p.Name
+}
+
+func getDescription(p PurchaseItem) string {
+	return p.Description
+}
+
 func createMockStatement() Statement {
 	return Statement{
 		FromDate: time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
-		ToDate: time.Date(2016, 2, 1, 0, 0, 0, 0, time.UTC),
+		ToDate:   time.Date(2016, 2, 1, 0, 0, 0, 0, time.UTC),
 		Account: Account{
 			FirstName: "John",
-			LastName: "Dow",
+			LastName:  "Dow",
 		},
-		Purchases: []Purchase {
-			Purchase{
-				Date: time.Date(2016, 1, 3, 0, 0, 0, 0, time.UTC),
-				Description: "Shovel",
+		Purchases: []Purchase{
+			{
+				Date:          time.Date(2016, 1, 3, 0, 0, 0, 0, time.UTC),
+				Description:   "Shovel",
 				AmountInCents: 2326,
 			},
-			Purchase{
-				Date: time.Date(2016, 1, 8, 0, 0, 0, 0, time.UTC),
-				Description: "Staple remover",
+			{
+				Date:          time.Date(2016, 1, 8, 0, 0, 0, 0, time.UTC),
+				Description:   "Staple remover",
 				AmountInCents: 5432,
 			},
 		},
