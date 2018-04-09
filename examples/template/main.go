@@ -11,6 +11,7 @@ import (
 type Account struct {
 	FirstName string
 	LastName  string
+	Exists    bool
 }
 
 type Purchase struct {
@@ -103,6 +104,7 @@ func createMockStatement() Statement {
 		Account: Account{
 			FirstName: "John",
 			LastName:  "Dow",
+			Exists:    false,
 		},
 		Purchases: []Purchase{
 			{

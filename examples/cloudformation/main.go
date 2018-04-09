@@ -8,12 +8,13 @@ import (
 	"text/template"
 
 	"github.com/upitau/goinbigdata/examples/cloudformation/s3"
+	"github.com/upitau/goinbigdata/examples/cloudformation/tags"
 )
 
 func parseCfnTemplate(name, templateFile string, specTags *map[string]string) (string, error) {
 	fmap := template.FuncMap{
-		"Key":   getTagKey,
-		"Value": getTagValue,
+		"Key":   tags.GetTagKey,
+		"Value": tags.GetTagValue,
 	}
 	t := template.Must(template.New(name).Funcs(fmap).Parse(templateFile))
 
@@ -25,41 +26,12 @@ func parseCfnTemplate(name, templateFile string, specTags *map[string]string) (s
 	return output.String(), err
 }
 
-type Tag struct {
-	TagKey   string
-	TagValue string
-}
-
-type Tags struct {
-	Tags []Tag
-}
-
 func generateCfnTemplate(t *template.Template, output io.Writer, specTags *map[string]string) error {
-	err := t.Execute(output, createDataObject(specTags))
+	err := t.Execute(output, s3.CreateDataObject(specTags))
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func createDataObject(specTags *map[string]string) Tags {
-	var tags Tags
-	if specTags == nil {
-		return tags
-	}
-	for k, v := range *specTags {
-		tags.Tags = append(tags.Tags, Tag{TagKey: k, TagValue: v})
-	}
-	fmt.Printf("tags : %v", tags)
-	return tags
-}
-
-func getTagKey(t Tag) string {
-	return t.TagKey
-}
-
-func getTagValue(t Tag) string {
-	return t.TagValue
 }
 
 func main() {
