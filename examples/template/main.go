@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"html/template"
+	//"html/template"
 	"os"
+	"text/template"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type Statement struct {
 	Account   Account
 	Purchases []Purchase
 }
+
 type PurchaseItem struct {
 	Name        string
 	Description string
