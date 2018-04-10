@@ -3,6 +3,8 @@ package kinesis
 import (
 	"fmt"
 	"github.com/upitau/goinbigdata/examples/cloudformation/tags"
+
+	awskinesis "github.com/aws/aws-sdk-go/service/kinesis"
 )
 
 const KinesisCfnTemplate = `
@@ -81,6 +83,7 @@ type AES struct {
 }
 
 func (a *AES) GetType() string {
+	// return awskinesis.EncryptionTypeNone
 	return "AES256"
 }
 
@@ -89,7 +92,7 @@ type KMS struct {
 }
 
 func (a *KMS) GetType() string {
-	return "aws.kms"
+	return awskinesis.EncryptionTypeKms
 }
 
 type EncryptionType string
@@ -108,22 +111,15 @@ func CreateDataObject(specTags *map[string]string) KinesisStreamDataObject {
 		for k, v := range *specTags {
 			t.Tags = append(t.Tags, tags.Tag{TagKey: k, TagValue: v})
 		}
-		fmt.Printf("tags : %v", t)
 	}
 	a := KMS{
 		KeyId: "arn:aws:kms:us-west-2:801351377084:key/85aa336d-be55-4c7f-b183-85c2f5c0e51b",
 	}
 
-	// a := KMS{
-	//  KeyId: "KMSID",
-	// }
-
-	o := KinesisStreamDataObject{
+	return KinesisStreamDataObject{
 		Kms:            a,
 		Tags:           t,
 		EncryptionType: EncryptionType(a.GetType()),
 		ShouldEncrypt:  true,
 	}
-	fmt.Printf("KinesisStreamDataObject: %v \n", o)
-	return o
 }
