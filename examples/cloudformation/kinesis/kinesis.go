@@ -1,6 +1,11 @@
 package kinesis
 
-const kinesisCfnTemplate = `
+import (
+	"fmt"
+	"github.com/upitau/goinbigdata/examples/cloudformation/tags"
+)
+
+const KinesisCfnTemplate = `
 Description: This is an AWS CloudFormation template for creating kinesis.
 
 Parameters:
@@ -34,10 +39,10 @@ Resources:
             Name: !Ref InputDataStream
             RetentionPeriodHours: !Ref RetentionPeriodHours
             ShardCount: !Ref ShardCount
-            {{- if .Encryption.ShouldEncrypt }}
+            {{- if .ShouldEncrypt }}
             StreamEncryption:
-            EncryptionType: !Ref EncryptionType
-            KeyId: !Ref KeyId
+            EncryptionType: {{ .EncryptionType}}
+            KeyId: {{ .Kms.KeyId}}
             {{end -}}
             Tags:
             - Key: K8sNamespace
@@ -46,12 +51,10 @@ Resources:
               Value: !Ref Cluster
             - Key: SpecVersion
               Value: !Ref SpecVersion
-            {{range .Tags -}}
-            -
-            Key: {{ .TagKey }}
-            Value: {{ .TagValue }}
-            {{end -}}
-
+            {{range .Tags.Tags -}}
+            - Key: {{ .TagKey }}
+              Value: {{ .TagValue }}
+            {{ end }}
     KCLDynamoDBTable:
         Type: "AWS::DynamoDB::Table"
         Properties:
@@ -72,3 +75,55 @@ Outputs:
         Value: !GetAtt KinesisStream.Arn
 
 `
+
+type AES struct {
+	Algorithm string
+}
+
+func (a *AES) GetType() string {
+	return "AES256"
+}
+
+type KMS struct {
+	KeyId string
+}
+
+func (a *KMS) GetType() string {
+	return "aws.kms"
+}
+
+type EncryptionType string
+
+type KinesisStreamDataObject struct {
+	Aes            AES
+	Kms            KMS
+	Tags           tags.Tags
+	EncryptionType EncryptionType
+	ShouldEncrypt  bool
+}
+
+func CreateDataObject(specTags *map[string]string) KinesisStreamDataObject {
+	var t tags.Tags
+	if specTags != nil {
+		for k, v := range *specTags {
+			t.Tags = append(t.Tags, tags.Tag{TagKey: k, TagValue: v})
+		}
+		fmt.Printf("tags : %v", t)
+	}
+	a := KMS{
+		KeyId: "arn:aws:kms:us-west-2:801351377084:key/85aa336d-be55-4c7f-b183-85c2f5c0e51b",
+	}
+
+	// a := KMS{
+	//  KeyId: "KMSID",
+	// }
+
+	o := KinesisStreamDataObject{
+		Kms:            a,
+		Tags:           t,
+		EncryptionType: EncryptionType(a.GetType()),
+		ShouldEncrypt:  true,
+	}
+	fmt.Printf("KinesisStreamDataObject: %v \n", o)
+	return o
+}

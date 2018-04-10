@@ -46,7 +46,7 @@ Resources:
             BucketEncryption:
                 ServerSideEncryptionConfiguration:
                 - ServerSideEncryptionByDefault:
-                     SSEAlgorithm: {{ .Type}}
+                     SSEAlgorithm: {{ .EncryptionType}}
             {{- else }}
             {{- end }}
 
@@ -66,7 +66,7 @@ Resources:
                     Resource: !Join ["", ["arn:aws:s3:::", !Ref S3BucketName, "/*"]]
                     Condition:
                         StringNotEquals:
-                            s3:x-amz-server-side-encryption: {{ .Type}}
+                            s3:x-amz-server-side-encryption: {{ .EncryptionType}}
     {{- else }}
     {{- end }}
 
@@ -95,11 +95,11 @@ func (a *KMS) GetType() string {
 type EncryptionType string
 
 type S3CfnDataObject struct {
-	//Aes           AES
-	//Kms           KMS
-	Tags          tags.Tags
-	Type          EncryptionType
-	ShouldEncrypt bool
+	Aes            AES
+	Kms            KMS
+	Tags           tags.Tags
+	EncryptionType EncryptionType
+	ShouldEncrypt  bool
 }
 
 func CreateDataObject(specTags *map[string]string) S3CfnDataObject {
@@ -113,10 +113,15 @@ func CreateDataObject(specTags *map[string]string) S3CfnDataObject {
 	a := AES{
 		Algorithm: "AES256",
 	}
+
+	// a := KMS{
+	//  KeyId: "KMSID",
+	// }
+
 	o := S3CfnDataObject{
-		Tags:          t,
-		Type:          EncryptionType(a.GetType()),
-		ShouldEncrypt: true,
+		Tags:           t,
+		EncryptionType: EncryptionType(a.GetType()),
+		ShouldEncrypt:  true,
 	}
 	fmt.Printf("S3CfnDataObject: %v \n", o)
 	return o
